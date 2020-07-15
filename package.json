@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "Caydens Api",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Victor Horton",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^3.0.2"
+  }
+}
