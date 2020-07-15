@@ -9,6 +9,7 @@
   "author": "Victor Horton",
   "license": "ISC",
   "dependencies": {
-    "fastify": "^3.0.2"
+    "fastify": "^3.0.2",
+    "monk": "^7.3.0"
   }
 }
