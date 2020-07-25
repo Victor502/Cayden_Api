@@ -34,23 +34,32 @@ d.get('/test', async (req, reply) => {
 
 d.post('/newuser', async (req, reply) => {
     console.log('/newuser')
-  if (typeof req.body !== 'undefined' && typeof req.body.email !== 'undefined' && typeof req.body.pw !== 'undefined' && req.body.pw) {
-    if (req.body.pw.length < 7) {
-      reply.code(403).send({err: 403, msg: 'password too short'})
-    } else { 
-      let salt = config.salt
-      let hash = crypto.createHash('sha256').update(req.body.pw + salt).digest('base64')
-      let email = req.body.email.trim()
-      let name = req.body.name
-      email = req.body.email.toLowerCase()
-      try {
-        // add logic to find if email already has an account
-        let res = await SaveNewUser(email, hash, name, req.body.pw)
-        reply.code(200).send({err: 0, msg: 'ok'})
-      } catch(e) {
-        reply.code(500).send({err: 500, msg: e.message})
-      }
-    }
+  if (typeof req.body !== 'undefined' &&
+      typeof req.body.email !== 'undefined' &&
+      typeof req.body.pw !== 'undefined' &&
+      req.body.pw) {
+        let users = db.get('users')
+        let existingUser = await users.find({email: req.body.email})
+        console.log('existingUser', existingUser)
+        if (typeof existingUser !== 'undefined' && existingUser.length > 0) {
+          reply.code(409).send({err: 409, msg: 'Email already associated with an Account'})
+        } else {
+          if (req.body.pw.length < 7) {
+            reply.code(403).send({err: 403, msg: 'password too short'})
+          } else { 
+            let salt = config.salt
+            let hash = crypto.createHash('sha256').update(req.body.pw + salt).digest('base64')
+            let email = req.body.email.trim()
+            let name = req.body.name
+            email = req.body.email.toLowerCase()
+            try {
+              let res = await SaveNewUser(email, hash, name, req.body.pw)
+              reply.code(200).send({err: 0, msg: 'ok'})
+            } catch(e) {
+              reply.code(500).send({err: 500, msg: e.message})
+            }
+          }
+        }
   } else {
     reply.code(403).send({err: 403, msg: 'invalid input'})
   }
@@ -65,7 +74,7 @@ d.post('/login', async (req, reply) => {
     let users = db.get('users')
     let salt = config.salt
     let hash = crypto.createHash('sha256').update(req.body.pwd + salt).digest('base64')
-    console.log('login here',email, req.body.pwd)
+    // console.log('login here',email, req.body.pwd)
     let res = await users.findOne({email: email, password: hash})
     if (typeof res !== 'undefined' && res) {
       if (typeof res.name === 'undefined' || !res.name) {
@@ -74,11 +83,11 @@ d.post('/login', async (req, reply) => {
       reply.code(200).send({err: 0, user: res})
     } else {
       console.log('login err, email password mismatch')
-      reply.code(200).send({err: 1, msg: 'Email or password does not match'})
+      reply.code(403).send({err: 403, msg: 'Email or password does not match'})
     }
   } catch (e) {
     console.log('login err', e)
-    reply.code(200).send({err: 1, msg: e})
+    reply.code(500).send({err: 1, msg: e.message})
   }
 })
 
@@ -154,9 +163,10 @@ SaveNewUser = async (email, pwd, name) => {
       name: name,
       register_date: Date.now(),
     })
+    console.log('res', res)
     return res
   } catch(e) {
-    console.log(e)
+    console.log('SaveNewUser', e)
     throw new Error(e)
   }
 }
@@ -192,9 +202,21 @@ UpdateUser = async (email, name) => {
       console.log(error)
     }
   }
-/**
+
 
   VerifyToken = (token) => {
+    try {
+      if (typeof token !== 'undefined' && token) {
+
+      } else {
+        return 'no token'
+      }
+      
+    } catch (e) {
+      throw new Error(e)
+    }
+
+/**
     return new Promise((resolve, reject) => {
       redis.get(token)
       .then((_token) => {
@@ -205,8 +227,9 @@ UpdateUser = async (email, name) => {
         reject(err)
       })
     })
+ */
   }
-*/
+
 
 // password stuff const generator = require('generate-password')
 /**
